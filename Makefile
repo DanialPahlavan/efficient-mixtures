@@ -5,8 +5,6 @@ VENV_ACTIVATE = $(VENV_NAME)/bin/activate
 PIP = $(VENV_NAME)/bin/pip
 PYTHON = $(VENV_NAME)/bin/python
 
-# Default target
-all: venv
 
 # Create virtual environment
 create: $(VENV_ACTIVATE)
@@ -20,5 +18,9 @@ clean:
 	rm -rf $(VENV_NAME)
 	find . -type f -name "*.pyc" -delete
 	find . -type d -name "__pycache__" -delete
+
+clean_runs:
+	rm -rf saved_models
+	mkdir saved_models saved_models/mnist_models
 
 .PHONY: all venv develop test clean
