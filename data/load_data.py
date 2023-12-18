@@ -1,7 +1,7 @@
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, TensorDataset, random_split
 from torchvision.datasets import MNIST, FashionMNIST
-from data.create_cifar_represenatations import CIFAR10Representations
+#from data.create_cifar_represenatations import CIFAR10Representations
 from torch.utils.data.sampler import SubsetRandomSampler
 import torch
 import numpy as np
