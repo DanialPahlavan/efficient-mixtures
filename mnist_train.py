@@ -188,11 +188,14 @@ if __name__ == '__main__':
     parser.add_argument('--estimator', type=str, default='s2s')
     args = parser.parse_args()
 
-    for S, n_A in [(1, 1), (2, 1), (2, 2), (3, 1), (3, 2), (3, 3), (4, 1), (4, 2), (4, 3), (4, 4)]:
-        args.n_A = n_A
-        args.S = S
-        print(args)
-        main(args)
+    print(args)
+    main(args)
+            
+    #for S, n_A in [(1, 1), (2, 1), (2, 2), (3, 1), (3, 2), (3, 3), (4, 1), (4, 2), (4, 3), (4, 4)]:
+    #    args.n_A = n_A
+    #    args.S = S
+    #    print(args)
+    #    main(args)
 
     """
     vae = MISVAECNN(S=S)
