@@ -1,16 +1,19 @@
 import torch
 from models.resnets import resnet20, resnet1202
+import pdb
+import os
+def load_resnet(model_name, device):
+    base_path = 'models/pretrained_models'
 
-
-def load_resnet(model_name):
-    path = '/home/oskar/phd/efficient_mixtures/models/pretrained_models'
     if model_name == 'resnet20':
-        path += '/resnet20-12fca82f.th'
+        filename = 'resnet20-12fca82f.th'
         resnet = resnet20()
     elif model_name == 'resnet1202':
-        path += '/resnet1202-f3b1deed.th'
+        filename = 'resnet1202-f3b1deed.th'
         resnet = resnet1202()
-    old_state_dict = torch.load(path)['state_dict']
+
+    path = os.path.abspath(os.path.join(base_path, filename))
+    old_state_dict = torch.load(path, map_location=torch.device(device))['state_dict']
     new_state_dict = {}
     for name in old_state_dict.keys():
         # remove module. to align with expected state_dict by model
