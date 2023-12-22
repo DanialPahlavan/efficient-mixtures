@@ -11,10 +11,9 @@ import time
 from tqdm import tqdm
 from models.load_pretrained_model import load_resnet
 
-
-def trainer(vae, train_dataloader, val_dataloader, dir_, n_epochs=200,
+def trainer(vae, train_dataloader, val_dataloader, dir_, device, n_epochs=200,
             verbose=True, L=1, warmup=None, N=100, val_obj_f="miselbo"):
-    resnet = load_resnet('resnet20').to(vae.device)
+    resnet = load_resnet('resnet20', device).to(vae.device)
     if warmup == "kl_warmup":
         vae.beta = 0
     vae.train()
@@ -147,16 +146,17 @@ def main(args):
     store_path = "saved_models/cifar_models"
     warmup = args.warmup
     vae = MISVAECIFAR(S=args.S, n_A=args.n_A, lr=lr, seed=seed, L=args.L, device=device,
-                      z_dims=args.latent_dims, n_channels=args.n_channels, n_pixelcnn_layers=args.n_pixelcnn_layers)
+                      z_dims=args.latent_dims, n_channels=args.n_channels,
+                       n_pixelcnn_layers=args.n_pixelcnn_layers, estimator=args.estimator)
     print("Num. params: ", count_parameters(vae))
 
     vae.model_name += f"_lr_{lr}_bs_{batch_size_tr}_warmup_{warmup}_N_{N}"
-    folder = str(datetime.datetime.now())[0:16] + "_" + vae.model_name + f"_epochs_{n_epochs}_L_{L_final}"
+    folder = str(datetime.datetime.now())[0:18] + "_" + vae.model_name + f"_epochs_{n_epochs}_L_{L_final}"
     dir_ = os.path.join(store_path, folder)
     os.makedirs(dir_)
 
     train_loss, eval_loss, training_time, avg_epoch_time = trainer(
-        vae, train_dataloader, val_dataloader, dir_, n_epochs=n_epochs, L=1, warmup=warmup, N=N,
+        vae, train_dataloader, val_dataloader, dir_, device, n_epochs=n_epochs, L=1, warmup=warmup, N=N,
         val_obj_f=obj_f)
 
     np.save(f'{dir_}/train_loss.npy', train_loss)
@@ -196,6 +196,7 @@ if __name__ == '__main__':
     parser.add_argument('--res_enc', type=int, default=1)
     parser.add_argument('--n_channels', type=int, default=64)
     parser.add_argument('--n_pixelcnn_layers', type=int, default=4)
+    parser.add_argument('--estimator', type=str, default='s2s')
     args = parser.parse_args()
 
     for S, n_A in [(4, 3)]:
@@ -221,15 +222,3 @@ if __name__ == '__main__':
     # avg_elbo = evaluate(vae, test_dataloader, L=5000, obj_f="miselbo")
     print("Final NLL: ", avg_elbo)
     """
-
-
-
-
-
-
-
-
-
-
-
-

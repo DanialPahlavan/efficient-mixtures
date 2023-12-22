@@ -7,10 +7,10 @@ from models.decoders import PixelCNNCIFARDecoder
 from torch.distributions import Normal
 import torch.nn.functional as F
 
-
 class MISVAECIFAR(MISVAECNN):
     def __init__(self, S=2, n_A=2, L=1, device='cuda:0', seed=0, n_channels=64,
-                 x_dims=784, z_dims=40, beta=1., lr=1e-3, resnet_model='resnet20', n_pixelcnn_layers=4):
+                 x_dims=784, z_dims=40, beta=1., lr=1e-3, resnet_model='resnet20', n_pixelcnn_layers=4,
+                 estimator='s2s'):
         super().__init__(S=S, n_A=n_A, L=L, seed=seed, x_dims=x_dims, z_dims=z_dims, device=device, beta=beta,
                          init_nets=False)
         self.model_name = f"MISVAECIFAR_a_{beta}_seed_{seed}_S_{S}_nA_{n_A}"
@@ -25,11 +25,18 @@ class MISVAECIFAR(MISVAECNN):
         self.theta = self.decoder.parameters()
         self.optim = torch.optim.Adam(params=list(self.phi) + list(self.theta), lr=lr, weight_decay=0)
 
+        self.estimator = estimator
+
     def forward(self, x, representation, components, L=0):
         if L == 0:
             L = self.L
-        mu, std = self.encoder(representation, components)
-        z = self.sample(mu, std, L)
+        if self.estimator == 's2a':
+            mu, std = self.encoder(representation, components=torch.ones(self.S, device=self.device))
+            mu_out, std_out = mu[:,torch.nonzero(components).flatten()], std[:,torch.nonzero(components).flatten()]
+            z = self.sample(mu_out, std_out, L)
+        else:
+            mu, std = self.encoder(representation, components)
+            z = self.sample(mu, std, L)
         reconstruction = self.decoder(x, z)
         return z, mu, std, reconstruction
 
@@ -51,7 +58,7 @@ class MISVAECIFAR(MISVAECNN):
 
     def get_log_w(self, x, z, mu, std, recon):
         # z has dims L, bs, S, z_dims
-        L, bs, n_A = z.size(0), x.size(0), z.size(-2)
+        L, bs, n_A, S = z.size(0), x.size(0), z.size(-2), mu.size(-2)
 
         log_px_z = torch.zeros((L, bs, n_A)).to(self.device)
         for l in range(L):
@@ -70,7 +77,11 @@ class MISVAECIFAR(MISVAECNN):
             z_s = z[..., s, :].view((L, bs, 1, z.size(-1)))
             # compute likelihood of z_s according to the variational ensemble
 
-            log_Q_mixture_wrt_z_s = torch.logsumexp(Q_mixt.log_prob(z_s).sum(dim=-1) - np.log(n_A), dim=-1)
+            if self.estimator == 's2a':
+                log_Q_mixture_wrt_z_s = torch.logsumexp(Q_mixt.log_prob(z_s).sum(dim=-1) - np.log(S), dim=-1)
+            else:
+                log_Q_mixture_wrt_z_s = torch.logsumexp(Q_mixt.log_prob(z_s).sum(dim=-1) - np.log(n_A), dim=-1)
+
             log_Q[..., s] = log_Q_mixture_wrt_z_s
             log_pz[..., s] = self.compute_prior(z_s)
 
