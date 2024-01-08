@@ -44,16 +44,16 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='MISVAE')
     parser.add_argument('--device', type=int, default=0)
-    parser.add_argument('--estimator', type=str, default='s2s')
+    #parser.add_argument('--estimator', type=str, default='s2s')
     eval_args = parser.parse_args()
 
-    estimator = eval_args.estimator
+    #estimator = eval_args.estimator
     device = eval_args.device
 
     L_final = 1000
     directory_path = 'saved_models/mnist_models/'
     convs = True
-    files = [f for f in os.listdir(directory_path) if estimator in f ]
+    files = [f for f in os.listdir(directory_path) if "epochs" in f ]
 
     for file in files:
 
