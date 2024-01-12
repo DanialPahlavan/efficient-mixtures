@@ -198,12 +198,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_pixelcnn_layers', type=int, default=4)
     parser.add_argument('--estimator', type=str, default='s2s')
     args = parser.parse_args()
-
-    for S, n_A in [(4, 3)]:
-        args.n_A = n_A
-        args.S = S
-        print(args)
-        main(args)
+    main(args)
 
     """
     vae = MISVAECNN(S=S)
