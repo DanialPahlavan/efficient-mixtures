@@ -128,7 +128,7 @@ class ResNetEncoder(GatedConv2dResidualEncoder):
         super().__init__(n_dims=None, S=S, h=64, latent_dims=latent_dims, device=device, conv_layer=False)
         self.S = S
         self.latent_dims = latent_dims
-        self.conv_layer = load_resnet(resnet_model)
+        self.conv_layer = load_resnet(resnet_model, device)
         # the output dims of the pretrained resnet is 64
 
 
