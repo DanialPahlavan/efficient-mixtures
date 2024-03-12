@@ -18,7 +18,7 @@ def load_mnist(batch_size_tr=128, batch_size_val=128, batch_size_test=128, split
     test_dataset = MNIST(root='./data/MNIST', download=True, train=False, transform=img_transform)
     # seed for binomial
     np.random.seed(777)
-    pdb.set_trace()
+
     # train_samples = np.random.binomial(1, train_dataset.data[:50000] / 255)
     train_samples = train_dataset.data[:50000] / 255
     train_labels = train_dataset.targets[:50000]
