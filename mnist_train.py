@@ -122,7 +122,7 @@ def evaluate_in_parts(vae, dataloader, L, obj_f, parts=10, convs=False):
 
 def main(args):
     L_final = args.L_final
-    n_epochs = 2000
+    n_epochs = args.no_epochs
     batch_size_tr = args.batch_size
     N = 100
     seed = args.seed
@@ -186,6 +186,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_A', type=int, default=1)
     parser.add_argument('--res_enc', type=int, default=1)
     parser.add_argument('--estimator', type=str, default='s2s')
+    parser.add_argument('--no_epochs', type=int, default=2000)            
     args = parser.parse_args()
 
     print(args)
