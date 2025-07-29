@@ -129,6 +129,7 @@ def evaluate_in_parts(vae, dataloader, L, obj_f, parts=10, convs=False):
 
 
 def main(args):
+    torch.set_float32_matmul_precision('high')
     torch.backends.cudnn.benchmark = True
     L_final = args.L_final
     n_epochs = args.no_epochs
@@ -143,12 +144,14 @@ def main(args):
         train_dataloader, val_dataloader, test_dataloader = load_mnist(batch_size_tr=batch_size_tr,
                                                                        batch_size_val=batch_size_tr,
                                                                        batch_size_test=100,
-                                                                       num_workers=num_workers)
+                                                                       num_workers=num_workers,
+                                                                       pin_memory=True)
     elif args.dataset == 'fashion_mnist':
         train_dataloader, val_dataloader, test_dataloader = load_fashion_mnist(batch_size_tr=batch_size_tr,
                                                                                batch_size_val=batch_size_tr,
                                                                                batch_size_test=100,
-                                                                               num_workers=num_workers)
+                                                                               num_workers=num_workers,
+                                                                               pin_memory=True)
     lr = args.lr
     store_path = "saved_models/mnist_models"
     warmup = args.warmup
