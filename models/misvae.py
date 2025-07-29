@@ -75,17 +75,21 @@ class MISVAECNN(nn.Module):
         elif obj_f == "miselbo":
             return - torch.sum(torch.mean(torch.logsumexp(log_p - log_q - np.log(L), dim=0), dim=-1))
 
-    def backpropagate(self, x, components):
+    def backpropagate(self, x, components, scaler=None):
         z, mu, std, recon = self.forward(x, components)
         log_w, log_p, log_q = self.get_log_w(x, z, mu, std, recon)
 
         # compute losses
         loss = self.loss(log_w, log_p, log_q, obj_f=self.obj_f)
         loss /= mu.size(0)  # divide by batch size
-        loss.backward()
-
-        # take step
-        self.optim.step()
+        
+        if scaler:
+            scaler.scale(loss).backward()
+            scaler.step(self.optim)
+            scaler.update()
+        else:
+            loss.backward()
+            self.optim.step()
 
         # reset gradients
         self.optim.zero_grad()
