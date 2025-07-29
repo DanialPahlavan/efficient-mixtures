@@ -6,35 +6,50 @@ from torch.utils.data.sampler import SubsetRandomSampler
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 
 def load_mnist(batch_size_tr=128, batch_size_val=128, batch_size_test=128, split_seed=42, num_workers=0):
     torch.manual_seed(split_seed)
-    img_transform = transforms.Compose([
-        transforms.ToTensor()
-    ])
+    
+    data_dir = './data/MNIST_processed'
+    train_path = os.path.join(data_dir, 'train.pt')
+    val_path = os.path.join(data_dir, 'val.pt')
+    test_path = os.path.join(data_dir, 'test.pt')
 
-    train_dataset = MNIST(root='./data/MNIST', download=True, train=True, transform=img_transform)
-    test_dataset = MNIST(root='./data/MNIST', download=True, train=False, transform=img_transform)
-    # seed for binomial
-    np.random.seed(777)
+    # Check if pre-processed data exists
+    if os.path.exists(train_path) and os.path.exists(val_path) and os.path.exists(test_path):
+        print("Loading pre-processed MNIST data.")
+        train_dataset = torch.load(train_path)
+        val_dataset = torch.load(val_path)
+        test_dataset = torch.load(test_path)
+    else:
+        print("Pre-processed MNIST data not found. Please run prepare_mnist_data.py first.")
+        # Fallback to original method if files are not found
+        img_transform = transforms.Compose([
+            transforms.ToTensor()
+        ])
 
-    # train_samples = np.random.binomial(1, train_dataset.data[:50000] / 255)
-    train_samples = train_dataset.data[:50000] / 255
-    train_labels = train_dataset.targets[:50000]
-    # train = TensorDataset(torch.from_numpy(train_samples), train_labels)
-    train = TensorDataset(train_samples, train_labels)
-    train_dataloader = DataLoader(train, batch_size=batch_size_tr, shuffle=True, num_workers=num_workers, pin_memory=True)
+        train_dataset_raw = MNIST(root='./data/MNIST', download=True, train=True, transform=img_transform)
+        test_dataset_raw = MNIST(root='./data/MNIST', download=True, train=False, transform=img_transform)
+        
+        np.random.seed(777)
 
-    val_labels = train_dataset.targets[50000:]
-    val_samples = np.random.binomial(1, train_dataset.data[50000:] / 255)
-    val = TensorDataset(torch.from_numpy(val_samples), val_labels)
-    val_dataloader = DataLoader(val, batch_size=batch_size_val, shuffle=True, num_workers=num_workers, pin_memory=True)
+        train_samples = train_dataset_raw.data[:50000] / 255
+        train_labels = train_dataset_raw.targets[:50000]
+        train_dataset = TensorDataset(train_samples, train_labels)
 
-    test_samples = np.random.binomial(1, test_dataset.data / 255)
-    test_labels = test_dataset.targets
-    test = TensorDataset(torch.from_numpy(test_samples), test_labels)
-    test_dataloader = DataLoader(test, batch_size=batch_size_test, shuffle=True, num_workers=num_workers, pin_memory=True)
+        val_labels = train_dataset_raw.targets[50000:]
+        val_samples = np.random.binomial(1, train_dataset_raw.data[50000:] / 255)
+        val_dataset = TensorDataset(torch.from_numpy(val_samples), val_labels)
+
+        test_samples = np.random.binomial(1, test_dataset_raw.data / 255)
+        test_labels = test_dataset_raw.targets
+        test_dataset = TensorDataset(torch.from_numpy(test_samples), test_labels)
+
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size_tr, shuffle=True, num_workers=num_workers, pin_memory=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size_val, shuffle=True, num_workers=num_workers, pin_memory=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=batch_size_test, shuffle=True, num_workers=num_workers, pin_memory=True)
 
     return train_dataloader, val_dataloader, test_dataloader
 
