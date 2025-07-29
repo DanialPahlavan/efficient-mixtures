@@ -144,14 +144,12 @@ def main(args):
         train_dataloader, val_dataloader, test_dataloader = load_mnist(batch_size_tr=batch_size_tr,
                                                                        batch_size_val=batch_size_tr,
                                                                        batch_size_test=100,
-                                                                       num_workers=num_workers,
-                                                                       pin_memory=True)
+                                                                       num_workers=num_workers)
     elif args.dataset == 'fashion_mnist':
         train_dataloader, val_dataloader, test_dataloader = load_fashion_mnist(batch_size_tr=batch_size_tr,
                                                                                batch_size_val=batch_size_tr,
                                                                                batch_size_test=100,
-                                                                               num_workers=num_workers,
-                                                                               pin_memory=True)
+                                                                               num_workers=num_workers)
     lr = args.lr
     store_path = "saved_models/mnist_models"
     warmup = args.warmup
