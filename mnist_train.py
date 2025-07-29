@@ -150,6 +150,10 @@ def main(args):
     warmup = args.warmup
     vae = MISVAECNN(S=args.S, n_A=args.n_A, lr=lr, seed=seed, L=args.L, device=device, z_dims=args.latent_dims,
                     residual_encoder=args.res_enc, estimator=args.estimator)
+    
+    # Compile the model for a significant speedup
+    vae = torch.compile(vae)
+
     convs = True
 
     print("Num. params: ", count_parameters(vae))
