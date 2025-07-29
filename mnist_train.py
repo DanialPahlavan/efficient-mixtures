@@ -39,7 +39,7 @@ def trainer(vae, train_dataloader, val_dataloader, dir_, n_epochs=200,
             idx = torch.multinomial(torch.ones(vae.S) / vae.S, vae.n_A, replacement=False)
             components[idx] = 1.
 
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast('cuda'):
                 loss = vae.backpropagate(x, components, scaler)
 
             epoch_loss += loss
@@ -82,7 +82,7 @@ def evaluate(vae, dataloader, L, obj_f='iwelbo', convs=False):
         if not convs:
             x = x.view((-1, vae.x_dims))
         with torch.no_grad():
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast('cuda'):
                 # components = torch.ones(vae.S, device=vae.device)
                 components = torch.zeros(vae.S, device=vae.device)
                 idx = torch.multinomial(torch.ones(vae.S) / vae.S, vae.n_A, replacement=False)
