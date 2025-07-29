@@ -2,8 +2,7 @@ import os
 import datetime
 import numpy as np
 import torch
-import torch._dynamo
-torch._dynamo.config.suppress_errors = True
+import torch._dynamo # Keep this import for suppress_errors
 from data.load_data import load_mnist, load_fashion_mnist
 from models.misvae import MISVAECNN
 import argparse
@@ -156,8 +155,10 @@ def main(args):
     vae = MISVAECNN(S=args.S, n_A=args.n_A, lr=lr, seed=seed, L=args.L, device=device, z_dims=args.latent_dims,
                     residual_encoder=args.res_enc, estimator=args.estimator)
     
-    # Compile the model for a significant speedup
-    vae = torch.compile(vae)
+    # Compile the model for a significant speedup (optional, controlled by --compile_model)
+    if args.compile_model:
+        torch._dynamo.config.suppress_errors = True # Ensure errors are suppressed if compile is enabled
+        vae = torch.compile(vae)
 
     convs = True
 
@@ -205,6 +206,7 @@ if __name__ == '__main__':
     parser.add_argument('--estimator', type=str, default='s2s')
     parser.add_argument('--no_epochs', type=int, default=2000)
     parser.add_argument('--num_workers', type=int, default=0, help='Number of workers for DataLoader')
+    parser.add_argument('--compile_model', type=int, default=0, help='Set to 1 to enable torch.compile, 0 to disable.')
     args = parser.parse_args()
 
     print(args)
