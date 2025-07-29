@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def load_mnist(batch_size_tr=128, batch_size_val=128, batch_size_test=128, split_seed=42):
+def load_mnist(batch_size_tr=128, batch_size_val=128, batch_size_test=128, split_seed=42, num_workers=0):
     torch.manual_seed(split_seed)
     img_transform = transforms.Compose([
         transforms.ToTensor()
@@ -24,22 +24,22 @@ def load_mnist(batch_size_tr=128, batch_size_val=128, batch_size_test=128, split
     train_labels = train_dataset.targets[:50000]
     # train = TensorDataset(torch.from_numpy(train_samples), train_labels)
     train = TensorDataset(train_samples, train_labels)
-    train_dataloader = DataLoader(train, batch_size=batch_size_tr, shuffle=True, num_workers=4, pin_memory=True)
+    train_dataloader = DataLoader(train, batch_size=batch_size_tr, shuffle=True, num_workers=num_workers, pin_memory=True)
 
     val_labels = train_dataset.targets[50000:]
     val_samples = np.random.binomial(1, train_dataset.data[50000:] / 255)
     val = TensorDataset(torch.from_numpy(val_samples), val_labels)
-    val_dataloader = DataLoader(val, batch_size=batch_size_val, shuffle=True, num_workers=4, pin_memory=True)
+    val_dataloader = DataLoader(val, batch_size=batch_size_val, shuffle=True, num_workers=num_workers, pin_memory=True)
 
     test_samples = np.random.binomial(1, test_dataset.data / 255)
     test_labels = test_dataset.targets
     test = TensorDataset(torch.from_numpy(test_samples), test_labels)
-    test_dataloader = DataLoader(test, batch_size=batch_size_test, shuffle=True, num_workers=4, pin_memory=True)
+    test_dataloader = DataLoader(test, batch_size=batch_size_test, shuffle=True, num_workers=num_workers, pin_memory=True)
 
     return train_dataloader, val_dataloader, test_dataloader
 
 
-def load_mnist_small(batch_size_tr=128, batch_size_val=128, batch_size_test=128, split_seed=42):
+def load_mnist_small(batch_size_tr=128, batch_size_val=128, batch_size_test=128, split_seed=42, num_workers=0):
     torch.manual_seed(split_seed)
     img_transform = transforms.Compose([
         transforms.ToTensor()
@@ -56,22 +56,22 @@ def load_mnist_small(batch_size_tr=128, batch_size_val=128, batch_size_test=128,
     train_labels = train_dataset.targets[:N]
 
     train = TensorDataset(train_samples, train_labels)
-    train_dataloader = DataLoader(train, batch_size=batch_size_tr, shuffle=True, num_workers=4, pin_memory=True)
+    train_dataloader = DataLoader(train, batch_size=batch_size_tr, shuffle=True, num_workers=num_workers, pin_memory=True)
 
     val_labels = train_dataset.targets[N:N*2]
     val_samples = np.random.binomial(1, train_dataset.data[N:N*2] / 255)
     val = TensorDataset(torch.from_numpy(val_samples), val_labels)
-    val_dataloader = DataLoader(val, batch_size=batch_size_val, shuffle=True, num_workers=4, pin_memory=True)
+    val_dataloader = DataLoader(val, batch_size=batch_size_val, shuffle=True, num_workers=num_workers, pin_memory=True)
 
     test_samples = np.random.binomial(1, test_dataset.data / 255)
     test_labels = test_dataset.targets
     test = TensorDataset(torch.from_numpy(test_samples), test_labels)
-    test_dataloader = DataLoader(test, batch_size=batch_size_test, shuffle=True, num_workers=4, pin_memory=True)
+    test_dataloader = DataLoader(test, batch_size=batch_size_test, shuffle=True, num_workers=num_workers, pin_memory=True)
 
     return train_dataloader, val_dataloader, test_dataloader
 
 
-def load_fashion_mnist(batch_size_tr=128, batch_size_val=128, batch_size_test=128, split_seed=42):
+def load_fashion_mnist(batch_size_tr=128, batch_size_val=128, batch_size_test=128, split_seed=42, num_workers=0):
     torch.manual_seed(split_seed)
     img_transform = transforms.Compose([
         transforms.ToTensor()
@@ -88,23 +88,23 @@ def load_fashion_mnist(batch_size_tr=128, batch_size_val=128, batch_size_test=12
     train_labels = train_dataset.targets[:50000]
     # train = TensorDataset(torch.from_numpy(train_samples), train_labels)
     train = TensorDataset(train_samples, train_labels)
-    train_dataloader = DataLoader(train, batch_size=batch_size_tr, shuffle=True, num_workers=4, pin_memory=True)
+    train_dataloader = DataLoader(train, batch_size=batch_size_tr, shuffle=True, num_workers=num_workers, pin_memory=True)
 
     val_labels = train_dataset.targets[50000:]
     val_samples = np.random.binomial(1, train_dataset.data[50000:] / 255)
     val = TensorDataset(torch.from_numpy(val_samples), val_labels)
-    val_dataloader = DataLoader(val, batch_size=batch_size_val, shuffle=True, num_workers=4, pin_memory=True)
+    val_dataloader = DataLoader(val, batch_size=batch_size_val, shuffle=True, num_workers=num_workers, pin_memory=True)
 
     test_samples = np.random.binomial(1, test_dataset.data / 255)
     test_labels = test_dataset.targets
     test = TensorDataset(torch.from_numpy(test_samples), test_labels)
-    test_dataloader = DataLoader(test, batch_size=batch_size_test, shuffle=True, num_workers=4, pin_memory=True)
+    test_dataloader = DataLoader(test, batch_size=batch_size_test, shuffle=True, num_workers=num_workers, pin_memory=True)
 
     return train_dataloader, val_dataloader, test_dataloader
 
 
 def load_CIFAR10(batch_size_tr=128, batch_size_val=128, batch_size_test=128,
-                 split_seed=42, resnet_model='resnet1202'):
+                 split_seed=42, resnet_model='resnet1202', num_workers=0):
 
     torch.manual_seed(split_seed)
 
@@ -115,15 +115,15 @@ def load_CIFAR10(batch_size_tr=128, batch_size_val=128, batch_size_test=128,
 
     train_set, val_set = torch.utils.data.random_split(train_dataset, [40000, 10000])
 
-    train_dataloader = DataLoader(train_set, batch_size=batch_size_tr, shuffle=True, num_workers=4, pin_memory=True)
-    val_dataloader = DataLoader(val_set, batch_size=batch_size_val, shuffle=False, num_workers=4, pin_memory=True)
-    test_dataloader = DataLoader(test_dataset, batch_size=batch_size_test, shuffle=False, num_workers=4, pin_memory=True)
+    train_dataloader = DataLoader(train_set, batch_size=batch_size_tr, shuffle=True, num_workers=num_workers, pin_memory=True)
+    val_dataloader = DataLoader(val_set, batch_size=batch_size_val, shuffle=False, num_workers=num_workers, pin_memory=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=batch_size_test, shuffle=False, num_workers=num_workers, pin_memory=True)
 
     return train_dataloader, val_dataloader, test_dataloader
 
 
 def load_CIFAR10_small(batch_size_tr=128, batch_size_val=128, batch_size_test=128,
-                 split_seed=42, resnet_model='resnet1202'):
+                 split_seed=42, resnet_model='resnet1202', num_workers=0):
 
     torch.manual_seed(split_seed)
 
@@ -136,8 +136,8 @@ def load_CIFAR10_small(batch_size_tr=128, batch_size_val=128, batch_size_test=12
     train_set, _ = torch.utils.data.random_split(train_set, [10, 40000-10])
     val_set, _ = torch.utils.data.random_split(val_set, [10, 10000-10])
     test_set, _ = torch.utils.data.random_split(test_dataset, [10, len(test_dataset)-10])
-    train_dataloader = DataLoader(train_set, batch_size=batch_size_tr, shuffle=True, num_workers=4, pin_memory=True)
-    val_dataloader = DataLoader(val_set, batch_size=batch_size_val, shuffle=False, num_workers=4, pin_memory=True)
-    test_dataloader = DataLoader(test_set, batch_size=batch_size_test, shuffle=False, num_workers=4, pin_memory=True)
+    train_dataloader = DataLoader(train_set, batch_size=batch_size_tr, shuffle=True, num_workers=num_workers, pin_memory=True)
+    val_dataloader = DataLoader(val_set, batch_size=batch_size_val, shuffle=False, num_workers=num_workers, pin_memory=True)
+    test_dataloader = DataLoader(test_set, batch_size=batch_size_test, shuffle=False, num_workers=num_workers, pin_memory=True)
 
     return train_dataloader, val_dataloader, test_dataloader

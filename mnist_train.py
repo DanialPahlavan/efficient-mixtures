@@ -136,15 +136,18 @@ def main(args):
     seed = args.seed
     obj_f = 'miselbo'
     device = f"cuda:{args.device}"
+    num_workers = args.num_workers
 
     if args.dataset == 'mnist':
         train_dataloader, val_dataloader, test_dataloader = load_mnist(batch_size_tr=batch_size_tr,
                                                                        batch_size_val=batch_size_tr,
-                                                                       batch_size_test=100)
+                                                                       batch_size_test=100,
+                                                                       num_workers=num_workers)
     elif args.dataset == 'fashion_mnist':
         train_dataloader, val_dataloader, test_dataloader = load_fashion_mnist(batch_size_tr=batch_size_tr,
                                                                                batch_size_val=batch_size_tr,
-                                                                               batch_size_test=100)
+                                                                               batch_size_test=100,
+                                                                               num_workers=num_workers)
     lr = args.lr
     store_path = "saved_models/mnist_models"
     warmup = args.warmup
@@ -198,7 +201,8 @@ if __name__ == '__main__':
     parser.add_argument('--n_A', type=int, default=1)
     parser.add_argument('--res_enc', type=int, default=1)
     parser.add_argument('--estimator', type=str, default='s2s')
-    parser.add_argument('--no_epochs', type=int, default=2000)            
+    parser.add_argument('--no_epochs', type=int, default=2000)
+    parser.add_argument('--num_workers', type=int, default=0, help='Number of workers for DataLoader')
     args = parser.parse_args()
 
     print(args)
