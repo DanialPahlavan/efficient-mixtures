@@ -21,6 +21,7 @@ def trainer(vae, train_dataloader, val_dataloader, dir_, n_epochs=200,
     training_time = 0
 
     for epoch in range(n_epochs):
+        epoch_loss = 0.
         num_batches = 0
 
         if warmup == "kl_warmup":
@@ -38,8 +39,10 @@ def trainer(vae, train_dataloader, val_dataloader, dir_, n_epochs=200,
 
             loss = vae.backpropagate(x, components)
 
-            train_loss_avg[epoch] += loss.item()
+            epoch_loss += loss
             num_batches += 1
+        
+        train_loss_avg[epoch] = epoch_loss.item() / num_batches
 
         epoch_time = time.time() - start_time
         training_time += epoch_time
@@ -68,8 +71,8 @@ def trainer(vae, train_dataloader, val_dataloader, dir_, n_epochs=200,
 def evaluate(vae, dataloader, L, obj_f='iwelbo', convs=False):
     if L == 0:
         L = vae.L
-    elbo = 0
-    num_batches = 0
+    total_elbo = 0.
+    total_samples = 0
 
     for x, y in dataloader:
         x = x.to(vae.device).float().view((-1, 1, 28, 28))
@@ -84,10 +87,11 @@ def evaluate(vae, dataloader, L, obj_f='iwelbo', convs=False):
             outputs = vae(x, components, L)
             log_w, log_p, log_q = vae.get_log_w(x, *outputs)
             loss = vae.loss(log_w, log_p, log_q, L, obj_f=obj_f)
-            elbo += loss.item()
-            num_batches += len(x)
-    avg_elbo = elbo / num_batches
-    return avg_elbo
+            total_elbo += loss
+            total_samples += len(x)
+            
+    avg_elbo = total_elbo / total_samples
+    return avg_elbo.item()
 
 
 def evaluate_in_parts(vae, dataloader, L, obj_f, parts=10, convs=False):

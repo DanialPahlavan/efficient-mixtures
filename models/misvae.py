@@ -99,26 +99,32 @@ class MISVAECNN(nn.Module):
         log_px_z = torch.sum(x * torch.log(recon + 1e-8) + (1 - x) * torch.log(1 - recon + 1e-8), dim=-1)
 
         # z has dims L, bs, n_A, z_dims
-        log_Q = torch.zeros((z.size(0), z.size(1), n_A)).to(self.device)
         # mu has dims 1, bs, {n_A|S}, z_dims
         Q_mixt = Normal(mu, std)
 
-        log_pz = torch.zeros_like(log_Q)
-        for s in range(n_A):
-            # get z from component s and expand to fit Q_mixt dimensions
-            z_s = z[..., s, :].view((z.size(0), z.size(1), 1, z.size(-1)))
-            # compute likelihood of z_s according to the variational ensemble
-            if self.estimator == 's2a':
-                log_Q_mixture_wrt_z_s = torch.logsumexp(Q_mixt.log_prob(z_s).sum(dim=-1) - np.log(S), dim=-1)
-            else:
-                log_Q_mixture_wrt_z_s = torch.logsumexp(Q_mixt.log_prob(z_s).sum(dim=-1) - np.log(n_A), dim=-1)
-            log_Q[..., s] = log_Q_mixture_wrt_z_s
-            log_pz[..., s] = self.compute_prior(z_s)
+        # Vectorized computation
+        # Reshape z to (L, bs, n_A, 1, z_dims) to broadcast over S components of Q_mixt
+        z_expanded = z.unsqueeze(-2)
+        
+        # log_prob will have shape (L, bs, n_A, S)
+        log_prob_z = Q_mixt.log_prob(z_expanded).sum(dim=-1)
+
+        log_denominator = np.log(S) if self.estimator == 's2a' else np.log(n_A)
+        
+        # log_Q will have shape (L, bs, n_A)
+        log_Q = torch.logsumexp(log_prob_z - log_denominator, dim=-1)
+        
+        # Prior computation, z has shape (L, bs, n_A, z_dims)
+        log_pz = self.compute_prior(z)
 
         log_p = log_px_z + log_pz
         log_w = log_px_z + self.beta * (log_pz - log_Q)
         return log_w, log_p, log_Q
 
     def compute_prior(self, z):
-        z = z.squeeze(-2)
+        # z can be (L, bs, n_A, z_dims) or (L, bs, 1, z_dims)
+        if z.dim() == 4 and z.size(2) != 1: # Squeezing only if n_A > 1
+             pass
+        elif z.dim() == 4 and z.size(2) == 1:
+             z = z.squeeze(-2)
         return Normal(torch.zeros_like(z), torch.ones_like(z)).log_prob(z).sum(dim=-1)
