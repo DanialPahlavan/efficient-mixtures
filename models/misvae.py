@@ -35,7 +35,7 @@ class MISVAECNN(nn.Module):
 
             self.phi = list(self.encoder.parameters())
             self.theta = self.decoder.parameters()
-            self.optim = torch.optim.Adam(params=list(self.phi) + list(self.theta), lr=lr, weight_decay=0)
+            self.optim = torch.optim.Adam(params=list(self.phi) + list(self.theta), lr=lr, weight_decay=0, fused=True)
 
     def forward(self, x, components, L=0):
         if L == 0:

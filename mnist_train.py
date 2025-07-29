@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 def trainer(vae, train_dataloader, val_dataloader, dir_, n_epochs=200,
             verbose=True, L=50, warmup=None, N=100, val_obj_f="miselbo", convs=False):
-    scaler = torch.cuda.amp.GradScaler()
+    scaler = torch.amp.GradScaler('cuda')
     if warmup == "kl_warmup":
         vae.beta = 0
     vae.train()
@@ -31,7 +31,7 @@ def trainer(vae, train_dataloader, val_dataloader, dir_, n_epochs=200,
         start_time = time.time()
 
         for x, y in tqdm(train_dataloader, desc=f"Epoch {epoch}"):
-            x = x.to(vae.device).float().view((-1, 1, 28, 28))
+            x = x.to(vae.device, non_blocking=True).float().view((-1, 1, 28, 28))
             if not convs:
                 x = x.view((-1, vae.x_dims))
             x = torch.bernoulli(x)
@@ -78,7 +78,7 @@ def evaluate(vae, dataloader, L, obj_f='iwelbo', convs=False):
     total_samples = 0
 
     for x, y in dataloader:
-        x = x.to(vae.device).float().view((-1, 1, 28, 28))
+        x = x.to(vae.device, non_blocking=True).float().view((-1, 1, 28, 28))
         if not convs:
             x = x.view((-1, vae.x_dims))
         with torch.no_grad():
@@ -109,7 +109,7 @@ def evaluate_in_parts(vae, dataloader, L, obj_f, parts=10, convs=False):
     if convs:
         parts = L
     for x, y in tqdm(dataloader):
-        x = x.to(vae.device).float().view((-1, 1, 28, 28))
+        x = x.to(vae.device, non_blocking=True).float().view((-1, 1, 28, 28))
         if not convs:
             x = x.view((-1, vae.x_dims))
         components = torch.ones(vae.S, device=vae.device)
