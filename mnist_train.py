@@ -27,7 +27,7 @@ def trainer(vae, train_dataloader, val_dataloader, dir_, n_epochs=200,
             vae.beta = np.minimum(1 / (N - 1) * epoch, 1.)
         start_time = time.time()
 
-        for x, y in train_dataloader:
+        for x, y in tqdm(train_dataloader, desc=f"Epoch {epoch}"):
             x = x.to(vae.device).float().view((-1, 1, 28, 28))
             if not convs:
                 x = x.view((-1, vae.x_dims))
@@ -121,6 +121,7 @@ def evaluate_in_parts(vae, dataloader, L, obj_f, parts=10, convs=False):
 
 
 def main(args):
+    torch.backends.cudnn.benchmark = True
     L_final = args.L_final
     n_epochs = args.no_epochs
     batch_size_tr = args.batch_size
@@ -215,15 +216,3 @@ if __name__ == '__main__':
     # avg_elbo = evaluate(vae, test_dataloader, L=5000, obj_f="miselbo")
     print("Final NLL: ", avg_elbo)
     """
-
-
-
-
-
-
-
-
-
-
-
-

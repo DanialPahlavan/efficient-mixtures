@@ -1,0 +1,5 @@
+__pycache__/
+data/MNIST/MNIST/raw/
+saved_models/mnist_models/
+
+optimization.md
