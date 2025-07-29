@@ -2,6 +2,8 @@ import os
 import datetime
 import numpy as np
 import torch
+import torch._dynamo
+torch._dynamo.config.suppress_errors = True
 from data.load_data import load_mnist, load_fashion_mnist
 from models.misvae import MISVAECNN
 import argparse
