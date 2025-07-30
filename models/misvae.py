@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch.distributions import Normal
 from models.encoders import EnsembleGatedConv2dEncoders
 from models.decoders import SingleLayerPixelCNNDecoder
-import pdb
+# import pdb
 
 class MISVAECNN(nn.Module):
     def __init__(self, S=2, n_A=2, L=1, device='cuda:0', seed=0,
@@ -70,12 +70,14 @@ class MISVAECNN(nn.Module):
             elbo = log_w.sum()
             return - elbo
         elif obj_f == 'iwelbo':
-            return - torch.sum(torch.logsumexp(log_p - log_q - np.log(L), dim=0))
+            # return - torch.sum(torch.logsumexp(log_p - log_q - np.log(L), dim=0))
+            return - torch.sum(torch.logsumexp(log_p - log_q - torch.log(torch.tensor(L, device=self.device)), dim=0))
         elif obj_f == 'miselbo_beta':
             beta_obj = log_w.mean(dim=-1).sum()
             return - beta_obj
         elif obj_f == "miselbo":
-            return - torch.sum(torch.mean(torch.logsumexp(log_p - log_q - np.log(L), dim=0), dim=-1))
+            # return - torch.sum(torch.mean(torch.logsumexp(log_p - log_q - np.log(L), dim=0), dim=-1))
+            return - torch.sum(torch.mean(torch.logsumexp(log_p - log_q - torch.log(torch.tensor(L, device=self.device)), dim=0), dim=-1))
 
     def backpropagate(self, x, components):
         z, mu, std, recon = self.forward(x, components)
@@ -111,8 +113,9 @@ class MISVAECNN(nn.Module):
         # log_prob will have shape (L, bs, n_A, S)
         log_prob_z = Q_mixt.log_prob(z_expanded).sum(dim=-1)
 
-        log_denominator = np.log(S) if self.estimator == 's2a' else np.log(n_A)
-        
+        # log_denominator = np.log(S) if self.estimator == 's2a' else np.log(n_A)
+        log_denominator = torch.log(torch.tensor(S, device=self.device)) if self.estimator == 's2a' else torch.log(torch.tensor(n_A, device=self.device))
+
         # log_Q will have shape (L, bs, n_A)
         log_Q = torch.logsumexp(log_prob_z - log_denominator, dim=-1)
         
@@ -124,9 +127,12 @@ class MISVAECNN(nn.Module):
         return log_w, log_p, log_Q
 
     def compute_prior(self, z):
-        # z can be (L, bs, n_A, z_dims) or (L, bs, 1, z_dims)
-        if z.dim() == 4 and z.size(2) != 1: # Squeezing only if n_A > 1
-             pass
-        elif z.dim() == 4 and z.size(2) == 1:
-             z = z.squeeze(-2)
-        return Normal(torch.zeros_like(z), torch.ones_like(z)).log_prob(z).sum(dim=-1)
+        # # z can be (L, bs, n_A, z_dims) or (L, bs, 1, z_dims)
+        # if z.dim() == 4 and z.size(2) != 1: # Squeezing only if n_A > 1
+        #      pass
+        # elif z.dim() == 4 and z.size(2) == 1:
+        #      z = z.squeeze(-2)
+        # return Normal(torch.zeros_like(z), torch.ones_like(z)).log_prob(z).sum(dim=-1)
+
+        # More efficient calculation of standard normal log_prob
+        return -0.5 * (z.pow(2) + torch.log(torch.tensor(2 * np.pi, device=z.device))).sum(dim=-1)

@@ -1,5 +1,5 @@
 import torch.nn as nn
-import torch.nn.functional as func
+# import torch.nn.functional as func
 import torch
 from models.conv_nets import GatedConv2d
 from models.load_pretrained_model import load_resnet
@@ -77,19 +77,31 @@ class GatedConv2dResidualEncoder(nn.Module):
             nn.Hardtanh(min_val=-6., max_val=2.)
         )
 
-    def forward(self, x_s):
-        # x_s = representation before parameterization net + component masking
-        x_mu = self.mu_0(x_s)
-        x_mu = torch.cat((x_s, x_mu), dim=-1)
-        x_mu = self.mu_1(x_mu)
-        x_mu = torch.cat((x_s, x_mu), dim=-1)
-        mu = self.mu_enc(x_mu)
+    def _residual_block(self, x_s, layer0, layer1, final_layer):
+        x = layer0(x_s)
+        x = torch.cat((x_s, x), dim=-1)
+        x = layer1(x)
+        x = torch.cat((x_s, x), dim=-1)
+        return final_layer(x)
 
-        x_std = self.log_var_0(x_s)
-        x_std = torch.cat((x_s, x_std), dim=-1)
-        x_std = self.log_var_1(x_std)
-        x_std = torch.cat((x_s, x_std), dim=-1)
-        std = torch.exp(0.5 * self.log_var_enc(x_std))
+    def forward(self, x_s):
+        # # x_s = representation before parameterization net + component masking
+        # x_mu = self.mu_0(x_s)
+        # x_mu = torch.cat((x_s, x_mu), dim=-1)
+        # x_mu = self.mu_1(x_mu)
+        # x_mu = torch.cat((x_s, x_mu), dim=-1)
+        # mu = self.mu_enc(x_mu)
+        #
+        # x_std = self.log_var_0(x_s)
+        # x_std = torch.cat((x_s, x_std), dim=-1)
+        # x_std = self.log_var_1(x_std)
+        # x_std = torch.cat((x_s, x_std), dim=-1)
+        # std = torch.exp(0.5 * self.log_var_enc(x_std))
+        # return mu, std
+
+        mu = self._residual_block(x_s, self.mu_0, self.mu_1, self.mu_enc)
+        log_var = self._residual_block(x_s, self.log_var_0, self.log_var_1, self.log_var_enc)
+        std = torch.exp(0.5 * log_var)
         return mu, std
 
 
