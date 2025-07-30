@@ -108,18 +108,35 @@ class EnsembleGatedConv2dEncoders(nn.Module):
 
     def forward(self, x, components):
         # (S, ) = components.shape, components == 1 indicates which component to use
-        n_A = torch.sum(components)
-        mu = torch.zeros((x.size(0), n_A.int(), self.latent_dims), device=self.device)
-        std = torch.zeros_like(mu)
+        # This new version is vectorized to be compatible with torch.compile
+        bs = x.size(0)
         x = self.encoder.conv_layer(x)
-        x = x.view((-1, self.encoder.h))
-        for i, s in enumerate(torch.where(components == 1)[0]):
-            component = func.one_hot(s, self.S).view((1, -1)).tile((x.size(0), 1))
-            x_s = torch.cat((x, component), dim=-1)
-            if self.residuals:
-                mu[:, i, :], std[:, i, :] = self.encoder(x_s)
-            else:
-                mu[:, i, :], std[:, i, :] = self.encoder.mu_enc(x_s), torch.exp(0.5 * self.encoder.log_var_enc(x_s))
+        x = x.view((bs, -1))  # Shape: (bs, h)
+
+        # Prepare for vectorization
+        # Repeat x for each of the S components
+        x_repeated = x.unsqueeze(1).expand(bs, self.S, self.encoder.h)  # Shape: (bs, S, h)
+
+        # Create one-hot vectors for all S components
+        one_hot_components = torch.eye(self.S, device=self.device)  # Shape: (S, S)
+        one_hot_components = one_hot_components.unsqueeze(0).expand(bs, self.S, self.S)  # Shape: (bs, S, S)
+
+        # Concatenate x with each component's one-hot vector
+        x_s = torch.cat((x_repeated, one_hot_components), dim=-1)  # Shape: (bs, S, h + S)
+
+        # Flatten for processing through linear layers
+        x_s_flat = x_s.view(bs * self.S, self.encoder.h + self.S)  # Shape: (bs * S, h + S)
+
+        if self.residuals:
+            mu_flat, std_flat = self.encoder(x_s_flat)  # Shape: (bs * S, latent_dims)
+        else:
+            mu_flat = self.encoder.mu_enc(x_s_flat)
+            std_flat = torch.exp(0.5 * self.encoder.log_var_enc(x_s_flat))
+
+        # Reshape back to (bs, S, latent_dims)
+        mu = mu_flat.view(bs, self.S, self.latent_dims)
+        std = std_flat.view(bs, self.S, self.latent_dims)
+
         return mu, std
 
 
@@ -139,16 +156,32 @@ class EnsembleResnetEncoders(EnsembleGatedConv2dEncoders):
 
     def forward(self, x, components):
         # (S, ) = components.shape, components == 1 indicates which component to use
-        x = self.encoder.conv_layer(x)
-        n_A = torch.sum(components)
-        mu = torch.zeros((x.size(0), n_A.int(), self.latent_dims), device=self.device)
-        std = torch.zeros_like(mu)
+        # This new version is vectorized to be compatible with torch.compile
+        bs = x.size(0)
+        x = self.encoder.conv_layer(x)  # Shape: (bs, h)
 
-        for i, s in enumerate(torch.where(components == 1)[0]):
-            component = func.one_hot(s, self.S).view((1, -1)).tile((x.size(0), 1))
-            x_s = torch.cat((x, component), dim=-1)
-            if self.residuals:
-                mu[:, i, :], std[:, i, :] = self.encoder(x_s)
-            else:
-                mu[:, i, :], std[:, i, :] = self.encoder.mu_enc(x_s), torch.exp(0.5 * self.encoder.log_var_enc(x_s))
+        # Prepare for vectorization
+        # Repeat x for each of the S components
+        x_repeated = x.unsqueeze(1).expand(bs, self.S, self.encoder.h)  # Shape: (bs, S, h)
+
+        # Create one-hot vectors for all S components
+        one_hot_components = torch.eye(self.S, device=self.device)  # Shape: (S, S)
+        one_hot_components = one_hot_components.unsqueeze(0).expand(bs, self.S, self.S)  # Shape: (bs, S, S)
+
+        # Concatenate x with each component's one-hot vector
+        x_s = torch.cat((x_repeated, one_hot_components), dim=-1)  # Shape: (bs, S, h + S)
+
+        # Flatten for processing through linear layers
+        x_s_flat = x_s.view(bs * self.S, self.encoder.h + self.S)  # Shape: (bs * S, h + S)
+
+        if self.residuals:
+            mu_flat, std_flat = self.encoder(x_s_flat)  # Shape: (bs * S, latent_dims)
+        else:
+            mu_flat = self.encoder.mu_enc(x_s_flat)
+            std_flat = torch.exp(0.5 * self.encoder.log_var_enc(x_s_flat))
+
+        # Reshape back to (bs, S, latent_dims)
+        mu = mu_flat.view(bs, self.S, self.latent_dims)
+        std = std_flat.view(bs, self.S, self.latent_dims)
+
         return mu, std

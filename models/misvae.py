@@ -42,7 +42,9 @@ class MISVAECNN(nn.Module):
             L = self.L
         if self.estimator == 's2a':
             mu, std = self.encoder(x, components=torch.ones(self.S, device=self.device))
-            mu_out, std_out = mu[:,torch.nonzero(components).flatten()], std[:,torch.nonzero(components).flatten()]
+            active_indices = components.bool()
+            mu_out = mu[:, active_indices].contiguous()
+            std_out = std[:, active_indices].contiguous()
             z = self.sample(mu_out, std_out, L)
         else:
             mu, std = self.encoder(x, components)
