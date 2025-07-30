@@ -126,6 +126,14 @@ def evaluate_in_parts(vae, dataloader, L, obj_f, parts=10, convs=False):
 
 
 def main(args):
+    # Check if pre-processed data exists and run script if not
+    data_dir = './data/MNIST_processed'
+    if args.prepare_data:
+        if not os.path.exists(data_dir) or not all(os.path.exists(os.path.join(data_dir, f)) for f in ['train.pt', 'val.pt', 'test.pt']):
+            print("Pre-processed MNIST data not found. Running prepare_mnist_data.py...")
+            import subprocess
+            subprocess.run(['python', 'data/prepare_mnist_data.py'], check=True)
+
     torch.set_float32_matmul_precision('high')
     torch.backends.cudnn.benchmark = True
     L_final = args.L_final
@@ -205,6 +213,7 @@ if __name__ == '__main__':
     parser.add_argument('--no_epochs', type=int, default=2000)
     parser.add_argument('--num_workers', type=int, default=0, help='Number of workers for DataLoader')
     parser.add_argument('--compile_model', type=int, default=0, help='Set to 1 to enable torch.compile, 0 to disable.')
+    parser.add_argument('--prepare_data', type=int, default=0, help='Set to 1 to run data preparation script.')
     args = parser.parse_args()
 
     print(args)

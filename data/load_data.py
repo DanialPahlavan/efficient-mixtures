@@ -20,11 +20,10 @@ def load_mnist(batch_size_tr=128, batch_size_val=128, batch_size_test=128, split
     # Check if pre-processed data exists
     if os.path.exists(train_path) and os.path.exists(val_path) and os.path.exists(test_path):
         print("Loading pre-processed MNIST data.")
-        train_dataset = torch.load(train_path)
-        val_dataset = torch.load(val_path)
-        test_dataset = torch.load(test_path)
+        train_dataset = torch.load(train_path, weights_only=False)
+        val_dataset = torch.load(val_path, weights_only=False)
+        test_dataset = torch.load(test_path, weights_only=False)
     else:
-        print("Pre-processed MNIST data not found. Please run prepare_mnist_data.py first.")
         # Fallback to original method if files are not found
         img_transform = transforms.Compose([
             transforms.ToTensor()

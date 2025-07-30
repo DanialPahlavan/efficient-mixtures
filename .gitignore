@@ -3,3 +3,6 @@ data/MNIST/MNIST/raw/
 saved_models/mnist_models/
 
 optimization.md
+data/MNIST_processed/val.pt
+data/MNIST_processed/test.pt
+data/MNIST_processed/train.pt
