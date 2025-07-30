@@ -12,7 +12,6 @@ from tqdm import tqdm
 
 def trainer(vae, train_dataloader, val_dataloader, dir_, n_epochs=200,
             verbose=True, L=50, warmup=None, N=100, val_obj_f="miselbo", convs=False):
-    scaler = torch.amp.GradScaler('cuda')
     if warmup == "kl_warmup":
         vae.beta = 0
     vae.train()
@@ -39,8 +38,7 @@ def trainer(vae, train_dataloader, val_dataloader, dir_, n_epochs=200,
             idx = torch.multinomial(torch.ones(vae.S) / vae.S, vae.n_A, replacement=False)
             components[idx] = 1.
 
-            with torch.amp.autocast('cuda'):
-                loss = vae.backpropagate(x, components, scaler)
+            loss = vae.backpropagate(x, components)
 
             epoch_loss += loss
             num_batches += 1
@@ -82,17 +80,16 @@ def evaluate(vae, dataloader, L, obj_f='iwelbo', convs=False):
         if not convs:
             x = x.view((-1, vae.x_dims))
         with torch.no_grad():
-            with torch.amp.autocast('cuda'):
-                # components = torch.ones(vae.S, device=vae.device)
-                components = torch.zeros(vae.S, device=vae.device)
-                idx = torch.multinomial(torch.ones(vae.S) / vae.S, vae.n_A, replacement=False)
-                components[idx] = 1.
+            # components = torch.ones(vae.S, device=vae.device)
+            components = torch.zeros(vae.S, device=vae.device)
+            idx = torch.multinomial(torch.ones(vae.S) / vae.S, vae.n_A, replacement=False)
+            components[idx] = 1.
 
-                outputs = vae(x, components, L)
-                log_w, log_p, log_q = vae.get_log_w(x, *outputs)
-                loss = vae.loss(log_w, log_p, log_q, L, obj_f=obj_f)
-                total_elbo += loss
-                total_samples += len(x)
+            outputs = vae(x, components, L)
+            log_w, log_p, log_q = vae.get_log_w(x, *outputs)
+            loss = vae.loss(log_w, log_p, log_q, L, obj_f=obj_f)
+            total_elbo += loss
+            total_samples += len(x)
             
     avg_elbo = total_elbo / total_samples
     return avg_elbo.item()
