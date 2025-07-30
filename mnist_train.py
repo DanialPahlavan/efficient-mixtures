@@ -21,6 +21,9 @@ def trainer(vae, train_dataloader, val_dataloader, dir_, n_epochs=200,
     best_epoch = 0
     training_time = 0
 
+    # Pre-calculate probabilities for multinomial sampling to avoid recreating the tensor in each batch
+    multinomial_probs = torch.ones(vae.S, device=vae.device) / vae.S
+
     for epoch in range(n_epochs):
         epoch_loss = 0.
         num_batches = 0
@@ -35,7 +38,7 @@ def trainer(vae, train_dataloader, val_dataloader, dir_, n_epochs=200,
                 x = x.view((-1, vae.x_dims))
             x = torch.bernoulli(x)
             components = torch.zeros(vae.S, device=vae.device)
-            idx = torch.multinomial(torch.ones(vae.S) / vae.S, vae.n_A, replacement=False)
+            idx = torch.multinomial(multinomial_probs, vae.n_A, replacement=False)
             components[idx] = 1.
 
             loss = vae.backpropagate(x, components)
@@ -186,7 +189,7 @@ def main(args):
     print("Evaluating by parts")
     avg_elbo = evaluate_in_parts(vae, test_dataloader, L=args.L_final, obj_f=obj_f, convs=True)
     print("Final ELBO: ", avg_elbo)
-    np.save(f'{dir_}/test_elbo.npy', avg_elbo)
+    np.save(f'{dir_}/test_elbo.npy', np.array([avg_elbo]))
 
 
 def count_parameters(model):
