@@ -110,14 +110,19 @@ class MISVAECNN(nn.Module):
         log_px_z = torch.sum(x * torch.log(recon + 1e-8) + (1 - x) * torch.log(1 - recon + 1e-8), dim=-1)
 
         # z has dims L, bs, n_A, z_dims
-        # mu has dims 1, bs, {n_A|S}, z_dims
-        Q_mixt = Normal(mu, std)
+        L, bs, n_A, z_dims = z.size()
+        S = mu.size(-2) # S from mu's second to last dim
 
-        # Vectorized computation
-        # Reshape z to (L, bs, n_A, 1, z_dims) to broadcast over S components of Q_mixt
-        z_expanded = z.unsqueeze(-2)
+        # Expand mu and std to (1, bs, 1, S, z_dims) for broadcasting
+        mu_expanded = mu.unsqueeze(0).unsqueeze(2) # (1, bs, 1, S, z_dims)
+        std_expanded = std.unsqueeze(0).unsqueeze(2) # (1, bs, 1, S, z_dims)
+
+        # Expand z to (L, bs, n_A, 1, z_dims) for broadcasting
+        z_expanded = z.unsqueeze(-2) # (L, bs, n_A, 1, z_dims)
+
+        Q_mixt = Normal(mu_expanded, std_expanded)
         
-        # log_prob will have shape (L, bs, n_A, S)
+        # log_prob will have shape (L, bs, n_A, S, z_dims)
         log_prob_z = Q_mixt.log_prob(z_expanded).sum(dim=-1)
 
         # log_denominator = np.log(S) if self.estimator == 's2a' else np.log(n_A)
